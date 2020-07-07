@@ -2,7 +2,7 @@ package com.baott.trackme.helpers
 
 import android.content.Context
 import android.graphics.Typeface
-import android.support.v4.util.LruCache
+import androidx.collection.LruCache
 
 
 /*

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="30dp"
+        android:gravity="center"
+        android:paddingEnd="30dp">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:background="@color/white"
+            android:orientation="vertical">
+
+        <com.baott.trackme.ui.views.CustomTextView
+                android:id="@+id/mTvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:gravity="start"
+                android:textSize="16sp"
+                app:txtFont="Roboto_Bold"
+                android:text="Title"/>
+
+        <com.baott.trackme.ui.views.CustomTextView
+                android:id="@+id/mTvContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:gravity="start"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                app:txtFont="Roboto_Regular"
+                android:text="Title"/>
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="25dp"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+            <com.baott.trackme.ui.views.CustomButton
+                    android:id="@+id/mBtnCancel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:padding="5dp"
+                    android:minWidth="70dp"
+                    android:text="Later"
+                    android:textSize="14sp"
+                    android:textColor="@color/black"
+                    app:txtFont="Roboto_Medium"
+                    android:textAllCaps="true"/>
+
+            <com.baott.trackme.ui.views.CustomButton
+                    android:id="@+id/mBtnOK"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="70dp"
+                    android:layout_marginStart="10dp"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:padding="5dp"
+                    android:text="OK"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:txtFont="Roboto_Medium"
+                    android:textAllCaps="true"/>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>

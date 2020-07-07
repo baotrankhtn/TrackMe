@@ -1,5 +1,7 @@
 package com.baott.trackme.ui.base
 
+import android.os.Bundle
+import com.baott.trackme.utils.ViewUtils
 import com.blab.moviestv.ui.base.permission.ActivityPermissionManager
 
 

@@ -1,3 +1,8 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">TrackMe</string>
+
+    <string name="cm_ok">OK</string>
+    <string name="cm_later">Later</string>
+
+    <string name="dialog_gps_title">Please open GPS</string>
 </resources>

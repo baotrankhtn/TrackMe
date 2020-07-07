@@ -1,7 +1,7 @@
 package com.baott.trackme.adapters.base
 
 import android.content.Context
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import android.view.animation.AlphaAnimation
 import com.baott.trackme.entities.BaseLoadingEntity

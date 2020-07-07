@@ -1,7 +1,7 @@
 package com.baott.trackme.ui.base
 
 import android.app.Application
-import android.arch.lifecycle.AndroidViewModel
+import androidx.lifecycle.AndroidViewModel
 import io.reactivex.disposables.CompositeDisposable
 
 

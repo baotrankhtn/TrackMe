@@ -1,8 +1,8 @@
 package com.baott.trackme.ui.viewholder
 
 import android.app.Application
-import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.MutableLiveData
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.baott.trackme.entities.NewsEntity
 import com.baott.trackme.entities.network.NewsListResponseEntity
 import com.baott.trackme.log.LOG

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 
 
 /* 
@@ -24,5 +25,10 @@ object IntentUtils {
         if (finishCurrent && context is Activity) {
             context.finish()
         }
+    }
+
+    fun openGpsSetting(ctx: Context) {
+        val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+        ctx.startActivity(intent)
     }
 }

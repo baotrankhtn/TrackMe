@@ -1,27 +1,27 @@
 package com.baott.trackme.ui.activities.home
 
-import android.arch.lifecycle.Observer
-import android.arch.lifecycle.ViewModelProviders
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
 import android.os.Bundle
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import android.view.View
 import com.baott.trackme.R
 import com.baott.trackme.adapters.base.NewsAdapter
 import com.baott.trackme.log.LOG
 import com.baott.trackme.ui.base.BaseActivity
 import com.baott.trackme.ui.viewholder.NewsListViewModel
-import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_home.*
 
 
-class MainActivity : BaseActivity() {
+class HomeActivity : BaseActivity() {
     private lateinit var mAdapter: NewsAdapter
     private lateinit var mLayoutManager: RecyclerView.LayoutManager
     private lateinit var mViewModel: NewsListViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_home)
         initView()
         initListener()
         loadData()
@@ -34,7 +34,11 @@ class MainActivity : BaseActivity() {
 
     private fun initView() {
         // RecyclerView
-        mLayoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+        mLayoutManager = LinearLayoutManager(
+            this,
+            LinearLayoutManager.VERTICAL,
+            false
+        )
         mRecyclerView.layoutManager = mLayoutManager
         mAdapter = NewsAdapter(this)
         mRecyclerView.adapter = mAdapter

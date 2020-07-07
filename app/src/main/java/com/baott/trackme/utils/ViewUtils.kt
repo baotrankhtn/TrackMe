@@ -4,8 +4,8 @@ import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.app.Activity
 import android.os.Build
-import android.support.v4.app.Fragment
-import android.support.v4.app.FragmentActivity
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import android.view.View
 import android.view.WindowManager
 
@@ -15,10 +15,16 @@ import android.view.WindowManager
  */
 
 object ViewUtils {
+    fun makeFullScreen(activity: Activity) {
+        activity.window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN)
+    }
+
     /**
      * Change background color with animation
      */
-    fun  changeBackgroundColorWithAnimation(view : View, colorFrom : Int, colorTo : Int, duration : Long) {
+    fun changeBackgroundColorWithAnimation(view : View, colorFrom : Int, colorTo : Int, duration : Long) {
         val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
         colorAnimation.duration = duration // milliseconds
         colorAnimation.addUpdateListener { animator -> view.setBackgroundColor(animator.animatedValue as Int) }

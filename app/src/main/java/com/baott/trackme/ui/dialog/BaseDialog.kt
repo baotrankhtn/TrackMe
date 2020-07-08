@@ -13,11 +13,11 @@ open class BaseDialog(context: Context) {
     protected var mContext: Context = context
     protected lateinit var mView : View
 
-    protected fun show() {
+    fun show() {
         mDialog.show()
     }
 
-    protected fun dismiss() {
+    fun dismiss() {
         if (mDialog.isShowing) {
             mDialog.dismiss()
         }

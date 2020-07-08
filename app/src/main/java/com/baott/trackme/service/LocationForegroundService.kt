@@ -16,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import com.baott.trackme.log.LOG
 import com.baott.trackme.ui.activities.record.RecordActivity
 import com.google.android.gms.location.*
+import java.util.*
 
 
 /*
@@ -32,6 +33,8 @@ class LocationForegroundService : Service() {
     private lateinit var mLocationCallback: LocationCallback
     private lateinit var mLocationRequest: LocationRequest
 
+    private var mTimer: Timer? = null
+
     override fun onCreate() {
         super.onCreate()
     }
@@ -44,6 +47,7 @@ class LocationForegroundService : Service() {
     }
 
     override fun onDestroy() {
+        stopLocationUpdates()
         super.onDestroy()
     }
 
@@ -114,8 +118,8 @@ class LocationForegroundService : Service() {
         )
 
         return NotificationCompat.Builder(this, ID_NOTIFICATION_CHANNEL)
-            .setContentTitle("TrackMe Service is running")
-            .setSmallIcon(android.R.drawable.radiobutton_off_background)
+            .setContentText("TrackMe Service is running")
+            .setSmallIcon(com.baott.trackme.R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .build()
     }

@@ -13,7 +13,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="10dp"
-            android:background="@color/white"
+            android:background="@drawable/shape_dialog_base"
             android:orientation="vertical">
 
         <com.baott.trackme.ui.views.CustomTextView
@@ -24,7 +24,7 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
                 android:gravity="start"
-                android:textSize="16sp"
+                style="@style/Text16"
                 app:txtFont="Roboto_Bold"
                 android:text="Title"/>
 
@@ -36,9 +36,7 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
                 android:gravity="start"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                app:txtFont="Roboto_Regular"
+                style="@style/Text16"
                 android:text="Title"/>
 
         <LinearLayout
@@ -58,8 +56,7 @@
                     android:padding="5dp"
                     android:minWidth="70dp"
                     android:text="Later"
-                    android:textSize="14sp"
-                    android:textColor="@color/black"
+                    style="@style/Text14"
                     app:txtFont="Roboto_Medium"
                     android:textAllCaps="true"/>
 
@@ -74,8 +71,8 @@
                     android:maxLines="1"
                     android:padding="5dp"
                     android:text="OK"
-                    android:textColor="@color/black"
-                    android:textSize="14sp"
+                    android:textColor="@color/colorPrimary"
+                    style="@style/Text14"
                     app:txtFont="Roboto_Medium"
                     android:textAllCaps="true"/>
         </LinearLayout>

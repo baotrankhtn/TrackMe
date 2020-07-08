@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:paddingTop="@dimen/padding_base"
+              android:paddingBottom="@dimen/padding_base"
+              android:layout_height="wrap_content">
+
+    <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+        <com.baott.trackme.ui.views.CustomTextView
+                android:id="@+id/mTvDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Text16"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:padding="2dp"
+                android:gravity="center"
+                app:txtFont="Roboto_Medium"
+                android:text="km"/>
+
+        <com.baott.trackme.ui.views.CustomTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Text16"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:txtFont="Roboto_Medium"
+                android:padding="2dp"
+                android:gravity="center"
+                android:text="@string/session_distance"/>
+    </LinearLayout>
+
+    <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+        <com.baott.trackme.ui.views.CustomTextView
+                android:id="@+id/mTvSpeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Text16"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:padding="2dp"
+                android:gravity="center"
+                app:txtFont="Roboto_Medium"
+                android:text="km/h"/>
+
+        <com.baott.trackme.ui.views.CustomTextView
+                android:id="@+id/mTvSpeedTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="@style/Text16"
+                android:maxLines="1"
+                android:ellipsize="end"
+                app:txtFont="Roboto_Medium"
+                android:padding="2dp"
+                android:gravity="center"
+                android:text="@string/session_speed"/>
+    </LinearLayout>
+
+    <com.baott.trackme.ui.views.CustomTextView
+            android:id="@+id/mTvTime"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            style="@style/Text16"
+            android:maxLines="1"
+            android:layout_gravity="center"
+            android:ellipsize="end"
+            app:txtFont="Roboto_Medium"
+            android:padding="2dp"
+            android:gravity="center"
+            android:text="00:00:00"/>
+</LinearLayout>

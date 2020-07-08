@@ -26,4 +26,9 @@ class Constants {
     object LoadMore {
         const val TIME_WAITING: Long = 300 // ms
     }
+
+    // Broadcast receiver
+    object Params {
+        const val BROADCAST_FROM_LOCATION_SERVICE = "BROADCAST_FROM_LOCATION_SERVICE"
+    }
 }

@@ -3,6 +3,14 @@
 
     <string name="cm_ok">OK</string>
     <string name="cm_later">Later</string>
+    <string name="cm_km">km</string>
+    <string name="cm_kmph">km/h</string>
 
+    <!-- Session -->
+    <string name="session_distance">Distance</string>
+    <string name="session_avg_speed">Avg. Speed</string>
+    <string name="session_speed">Speed</string>
+
+    <!-- Dialog -->
     <string name="dialog_gps_title">Please open GPS</string>
 </resources>

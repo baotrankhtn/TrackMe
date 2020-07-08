@@ -28,7 +28,12 @@ class Constants {
     }
 
     // Broadcast receiver
-    object Params {
+    object Actions {
         const val BROADCAST_FROM_LOCATION_SERVICE = "BROADCAST_FROM_LOCATION_SERVICE"
+    }
+
+    // IntentParam
+    object IntentParams {
+        const val TRACKINFO = "TRACKINFO"
     }
 }

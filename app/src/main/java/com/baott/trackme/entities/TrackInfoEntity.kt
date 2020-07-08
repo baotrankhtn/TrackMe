@@ -8,55 +8,106 @@ import android.location.Location
  */
 
 class TrackInfoEntity {
-    var duration: Long = 1 // millis
-    var points: MutableList<MyLatLong>? = null
+    var points: MutableList<MyPoint> = ArrayList()
+    var duration: Long = 0 // cached to speedup performance (millis)
+    var distance: Float = 0f // cached (meter)
+    var averageSpeed: Float = 0f // cached (km/h)
 
-    inner class MyLatLong {
+    /**
+     * Lat, Lng and time it takes to have this point
+     */
+    class MyPoint(lat: Double, lng: Double) {
         var lat: Double = 0.0
         var lng: Double = 0.0
+        var startTime: Long = 0 // millis
+        var endTime: Long = 0
+
+        init {
+            this.lat = lat
+            this.lng = lng
+        }
+
+        constructor(lat: Double, lng: Double, startTime: Long, endTime: Long) : this(lat, lng) {
+            this.startTime = startTime
+            this.endTime = endTime
+        }
     }
 
+    fun addPoint(lat: Double, lng: Double, startTime: Long, endTime: Long) {
+        // Duration
+        duration = duration + endTime - startTime
+
+        // Distance
+        if (points.size >= 1) {
+            val lastIndex = points.size - 1
+            distance += calculateDistance(points[lastIndex].lat, points[lastIndex].lng, lat, lng)
+        }
+
+        points.add(MyPoint(lat, lng, startTime, endTime))
+    }
+
+    /**
+     * Total session distance in meter
+     */
     fun calculateDistance(): Float {
         var distance = 0f
-        points?.let { valPoints ->
-            for (index in valPoints.indices - 1) {
-                distance += calculateDistance(
-                    valPoints[index].lat, valPoints[index].lng,
-                    valPoints[index + 1].lat, valPoints[index + 1].lng
-                )
-            }
+        for (index in points.indices - 1) {
+            distance += calculateDistance(
+                points[index].lat, points[index].lng,
+                points[index + 1].lat, points[index + 1].lng
+            )
         }
         return distance
     }
 
+    /**
+     * Total session duration in milliseconds
+     */
+    fun calculateDuration(): Long {
+        var duration = 0L
+        for (point in points) {
+            duration = duration + point.endTime - point.startTime
+        }
+        return duration
+    }
+
+    /**
+     * Average speed in km/h
+     */
     fun calculateAverageSpeed(): Float {
         val distance = calculateDistance() // m
+        val duration = calculateDuration() // millis
         return (distance / 1000) / (duration / 3600000)
     }
 
     /**
-     * Current speed based on 3 latest points
+     * Current speed based on 3 latest points: km/h
      */
     fun calculateCurrentSpeed(): Float {
-        var distance = 0f
-        points?.let { valPoints ->
-            if (valPoints.size >= 3) {
-                var lastIndex = valPoints.size - 1
-                distance = calculateDistance(
-                    valPoints[lastIndex].lat, valPoints[lastIndex].lng,
-                    valPoints[lastIndex - 1].lat, valPoints[lastIndex - 1].lng
-                ) +
-                        calculateDistance(
-                            valPoints[lastIndex - 1].lat, valPoints[lastIndex - 1].lng,
-                            valPoints[lastIndex - 2].lat, valPoints[lastIndex - 2].lng
-                        )
-            }
+        if (points.size >= 3) {
+            val lastIndex = points.size - 1
+            val secondLastIndex = lastIndex - 1
+            val thirdLastIndex = lastIndex - 2
+            val distance = calculateDistance(
+                points[lastIndex].lat, points[lastIndex].lng,
+                points[secondLastIndex].lat, points[secondLastIndex].lng
+            ) +
+                    calculateDistance(
+                        points[secondLastIndex].lat, points[secondLastIndex].lng,
+                        points[thirdLastIndex].lat, points[thirdLastIndex].lng
+                    )
+
+            val duration =
+                (points[lastIndex].endTime - points[lastIndex].startTime)
+            +(points[secondLastIndex].endTime - points[secondLastIndex].startTime)
+            +(points[thirdLastIndex].endTime - points[thirdLastIndex].startTime)
+            return distance
         }
         return calculateAverageSpeed()
     }
 
     /**
-     * Distance in meter
+     * Distance in meter between 2 points
      *
      * @param lat1
      * @param lng1
@@ -64,7 +115,7 @@ class TrackInfoEntity {
      * @param lng2
      * @return -1: can not calculate
      */
-    fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Float {
+    private fun calculateDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Float {
         if (lat1 == 0.0 || lng1 == 0.0 || lat2 == 0.0 || lng2 == 0.0) {
             return 0f
         }
@@ -77,5 +128,12 @@ class TrackInfoEntity {
         loc2.longitude = lng2
 
         return loc1.distanceTo(loc2)
+    }
+
+    fun isStartPoint(): Boolean {
+        if (points.size == 1) {
+            return true
+        }
+        return false
     }
 }

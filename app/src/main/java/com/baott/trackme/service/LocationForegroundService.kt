@@ -11,8 +11,12 @@ import android.app.NotificationManager
 import android.app.NotificationChannel
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
 import android.os.Looper
 import androidx.core.app.ActivityCompat
+import com.baott.trackme.constants.Constants
+import com.baott.trackme.entities.TrackInfoEntity
+import com.baott.trackme.helpers.GsonHelper
 import com.baott.trackme.log.LOG
 import com.baott.trackme.ui.activities.record.RecordActivity
 import com.google.android.gms.location.*
@@ -26,21 +30,18 @@ import java.util.*
 class LocationForegroundService : Service() {
     val ID_NOTIFICATION_CHANNEL = "ID_1234"
 
-    private val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 3000
-    private val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS: Long = 1000
+    private val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 5000
+    private val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS: Long = 3000
 
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
     private lateinit var mLocationCallback: LocationCallback
     private lateinit var mLocationRequest: LocationRequest
 
-    private var mTimer: Timer? = null
-
-    override fun onCreate() {
-        super.onCreate()
-    }
+    private val mTrackInfo = TrackInfoEntity()
+    private var mTimeLastSave: Long = 0
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val notification  = createNotification()
+        val notification = createNotification()
         startForeground(1, notification)
         setupLocationClient()
         return START_NOT_STICKY
@@ -55,6 +56,25 @@ class LocationForegroundService : Service() {
         return null
     }
 
+    /**
+     * Process location update
+     */
+    private fun onLocationUpdate(lat: Double, lng: Double) {
+        LOG.d("$lat/$lng")
+
+        // Add point
+        mTrackInfo.addPoint(lat, lng, mTimeLastSave, System.currentTimeMillis())
+        mTimeLastSave = System.currentTimeMillis()
+
+        // Send broadcast
+        val bundle = Bundle()
+        val intent = Intent()
+        intent.action = Constants.Actions.BROADCAST_FROM_LOCATION_SERVICE
+        bundle.putString(Constants.IntentParams.TRACKINFO, GsonHelper.getInstance().toJson(mTrackInfo))
+        intent.putExtras(bundle)
+        sendBroadcast(intent)
+    }
+
     private fun setupLocationClient() {
         // Get location client
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
@@ -67,9 +87,11 @@ class LocationForegroundService : Service() {
 
         mLocationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
-                locationResult ?: return
-                for (location in locationResult.locations) {
-                    LOG.d(location.latitude.toString() + "/" + location.longitude.toString())
+                locationResult?.let {
+                    if (!it.locations.isNullOrEmpty()) {
+                        val location = it.locations[it.locations.size - 1]
+                        onLocationUpdate(location.latitude, location.longitude)
+                    }
                 }
             }
         }

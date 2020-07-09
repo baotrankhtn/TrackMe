@@ -10,6 +10,7 @@
     <string name="session_distance">Distance</string>
     <string name="session_avg_speed">Avg. Speed</string>
     <string name="session_speed">Speed</string>
+    <string name="session_no_history">Empty workout history. \nStart your workout now!</string>
 
     <!-- Dialog -->
     <string name="dialog_gps_title">Please open GPS</string>

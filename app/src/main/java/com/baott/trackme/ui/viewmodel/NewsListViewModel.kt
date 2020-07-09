@@ -1,4 +1,4 @@
-package com.baott.trackme.ui.viewholder
+package com.baott.trackme.ui.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.LiveData

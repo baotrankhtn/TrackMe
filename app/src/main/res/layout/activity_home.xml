@@ -1,29 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
+        android:background="@color/white"
         tools:context=".ui.activities.home.HomeActivity">
 
     <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/mRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Hello World!"
             android:clipToPadding="false"
-            android:layout_weight="1"
             android:padding="10dp"/>
 
-    <com.baott.trackme.ui.views.CustomButton
-            android:id="@+id/mButton"
+    <com.baott.trackme.ui.views.CustomTextView
+            android:id="@+id/mTvNoHistory"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="LOAD"
-            android:textColor="@android:color/white"
-            android:padding="10dp"
+            style="@style/Text16"
+            android:layout_centerInParent="true"
             android:gravity="center"
-            android:background="@android:color/holo_red_dark"/>
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:padding="@dimen/padding_base"
+            android:text="@string/session_no_history"
+            android:textColor="@color/grey"/>
 
-</LinearLayout>
+    <com.baott.trackme.ui.views.CustomImageView
+            android:id="@+id/mBtnRecord"
+            android:layout_width="@dimen/ic_width_base"
+            android:layout_height="@dimen/ic_height_base"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="20dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:src="@drawable/ic_record"/>
+
+</RelativeLayout>

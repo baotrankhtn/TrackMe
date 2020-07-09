@@ -299,6 +299,13 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
                 RoomManager.insertSession(this@RecordActivity, valSessionInfo, object: IInsertSessionCallback {
                     override fun onSuccess(sessionEntity: SessionEntity) {
                         LOG.d("Insert session done")
+
+                        // Notify history screen
+                        val intent = Intent()
+                        intent.action = Constants.Actions.NEW_SAVED_SESSION
+                        intent.putExtra(Constants.IntentParams.SESSION_INFO, GsonHelper.getInstance().toJson(sessionEntity))
+                        sendBroadcast(intent)
+
                         finish()
                     }
 
@@ -313,7 +320,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     private fun initBroadcastReceiver() {
         mReceiver = MyReceiver()
         val intentFilter = IntentFilter()
-        intentFilter.addAction(Constants.Actions.BROADCAST_FROM_LOCATION_SERVICE)
+        intentFilter.addAction(Constants.Actions.UPDATE_LOCATION)
         registerReceiver(mReceiver, intentFilter)
     }
 
@@ -323,7 +330,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
             if (mIsInForeground) {
                 intent?.action?.let {
                     when (it) {
-                        Constants.Actions.BROADCAST_FROM_LOCATION_SERVICE -> {
+                        Constants.Actions.UPDATE_LOCATION -> {
                             // Parse data
                             val strSessionInfo = intent.extras?.getString(Constants.IntentParams.SESSION_INFO, null)
                             val sessionInfo = GsonHelper.getInstance().fromJson(strSessionInfo, SessionEntity::class.java)

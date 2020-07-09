@@ -14,7 +14,7 @@ import com.baott.trackme.ui.base.BaseViewModel
  */
 
 class SessionViewModel (application: Application) : BaseViewModel(application) {
-    private var mSessionHistory: MutableLiveData<List<SessionEntity>?> = MutableLiveData()
+    private var mSessionHistory: MutableLiveData<MutableList<SessionEntity>?> = MutableLiveData()
 
     fun requestSessionHistory(pageIndex: Int, pageSize: Int) {
         RoomManager.getSessionHistory(getApplication(), pageIndex, pageSize, object : IGetSessionHistoryCallback {
@@ -28,7 +28,7 @@ class SessionViewModel (application: Application) : BaseViewModel(application) {
         })
     }
 
-    fun getSessionHistory(): LiveData<List<SessionEntity>?> {
+    fun getSessionHistory(): LiveData<MutableList<SessionEntity>?> {
         return mSessionHistory
     }
 }

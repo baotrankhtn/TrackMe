@@ -84,7 +84,7 @@ class LocationForegroundService : Service() {
         // Send broadcast
         val bundle = Bundle()
         val intent = Intent()
-        intent.action = Constants.Actions.BROADCAST_FROM_LOCATION_SERVICE
+        intent.action = Constants.Actions.UPDATE_LOCATION
         bundle.putString(Constants.IntentParams.SESSION_INFO, GsonHelper.getInstance().toJson(mSessionInfo))
         intent.putExtras(bundle)
         sendBroadcast(intent)

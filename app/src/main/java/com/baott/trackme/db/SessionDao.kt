@@ -12,7 +12,7 @@ import com.baott.trackme.entities.SessionEntity
 
 @Dao
 interface SessionDao {
-    @Query("SELECT * FROM SessionEntity LIMIT :pageSize")
+    @Query("SELECT * FROM SessionEntity ORDER BY id DESC LIMIT :pageSize")
     fun getSessionHistory(pageSize: Int): MutableList<SessionEntity>
 
     //

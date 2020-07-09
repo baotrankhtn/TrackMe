@@ -38,7 +38,7 @@ class LocationForegroundService : Service() {
     private lateinit var mLocationRequest: LocationRequest
 
     private val mTrackInfo = TrackInfoEntity()
-    private var mTimeLastSave: Long = 0
+    private var mTimeLastSave: Long = System.currentTimeMillis()
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         val notification = createNotification()

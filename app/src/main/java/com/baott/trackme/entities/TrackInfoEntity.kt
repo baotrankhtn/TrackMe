@@ -51,11 +51,13 @@ class TrackInfoEntity {
      */
     fun calculateDistance(): Float {
         var distance = 0f
-        for (index in points.indices - 1) {
-            distance += calculateDistance(
-                points[index].lat, points[index].lng,
-                points[index + 1].lat, points[index + 1].lng
-            )
+        if (points.size > 1) {
+            for (index in 1 until points.size - 1) {
+                distance += calculateDistance(
+                    points[index].lat, points[index].lng,
+                    points[index - 1].lat, points[index - 1].lng
+                )
+            }
         }
         return distance
     }

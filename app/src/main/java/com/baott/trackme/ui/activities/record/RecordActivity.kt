@@ -14,6 +14,7 @@ import com.baott.trackme.helpers.GsonHelper
 import com.baott.trackme.service.LocationForegroundService
 import com.baott.trackme.ui.base.BaseActivity
 import com.baott.trackme.utils.BitmapUtils
+import com.baott.trackme.utils.DateTimeUtils
 import com.baott.trackme.utils.LocationUtils
 import com.blab.moviestv.ui.base.permission.PermissionResult
 import com.blab.moviestv.ui.base.permission.PermissionUtils
@@ -25,14 +26,18 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
+import kotlinx.android.synthetic.main.partial_session_info.*
+import java.util.*
 
 class RecordActivity : BaseActivity(), OnMapReadyCallback {
     private lateinit var mMapFragment: SupportMapFragment
-    private lateinit var mGoogleMap: GoogleMap
+    private var mGoogleMap: GoogleMap? = null
 
     private var mReceiver: BroadcastReceiver? = null
     private var mIndexRendered: Int = -1 // Index of latest rendered point on map
     private var mIsInForeground = false // Check if activity is in foreground
+
+    private var mTimer: Timer? = null // Update duration every seconds
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,7 +48,9 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
 
     override fun onStart() {
         super.onStart()
+        // Foreground or background
         mIsInForeground = true
+
         startLocationService()
     }
 
@@ -53,7 +60,13 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     }
 
     override fun onStop() {
+        // Foreground or background
         mIsInForeground = false
+
+        // Timer
+        mTimer?.cancel()
+        mTimer = null
+
         super.onStop()
     }
 
@@ -65,11 +78,18 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         super.onDestroy()
     }
 
+    override fun onMapReady(googleMap: GoogleMap?) {
+        googleMap?.let {
+            mGoogleMap = it
+        }
+    }
+
     /**
      * Location update from service
      * Maybe some points are not rendered when this activity is in background
      */
-    private fun onLocationUpdate(points: MutableList<TrackInfoEntity.MyPoint>) {
+    private fun onLocationUpdate(trackInfo: TrackInfoEntity) {
+        val points = trackInfo.points
         if (points.size > 0) {
             // First point: show marker
             if (mIndexRendered == -1) {
@@ -85,31 +105,21 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
                     mIndexRendered = index // update render index
                 }
             }
-        }
-    }
 
-    /**
-     * First location update from service
-     */
-    private fun onFirstLocationUpdate(lat: Double, lng: Double) {
-
-    }
-
-    override fun onMapReady(googleMap: GoogleMap?) {
-        googleMap?.let {
-            mGoogleMap = it
+            // Update tracking info
+            updateTrackingInfo(trackInfo.distance, trackInfo.calculateCurrentSpeed(), trackInfo.duration)
         }
     }
 
     private fun moveCamera(lat: Double, lng: Double) {
-        mGoogleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 23f))
+        mGoogleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 23f))
     }
 
     private fun drawLine(lat: Double, lng: Double, nextLat: Double, nextLng: Double) {
         val options = PolylineOptions().width(8f).color(ContextCompat.getColor(this, R.color.colorPrimary))
         options.add(LatLng(lat, lng))
         options.add(LatLng(nextLat, nextLng))
-        mGoogleMap.addPolyline(options)
+        mGoogleMap?.addPolyline(options)
     }
 
     private fun showStartMarker(latlng: LatLng) {
@@ -117,7 +127,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
             resources,
             R.drawable.ic_start_location
         )
-        mGoogleMap.addMarker(
+        mGoogleMap?.addMarker(
             MarkerOptions()
                 .position(latlng)
                 .title("Wrong Turn!")
@@ -126,6 +136,26 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
                         .fromBitmap(BitmapUtils.resizeBitmap(bitmap, 100))
                 )
         )
+    }
+
+    private fun updateTrackingInfo(distance: Float, currentSpeed: Float, duration: Long) {
+        // Distance
+        mTvDistance.text = String.format(getString(R.string.cm_format_km), distance / 1000)
+
+        // Current speed
+        mTvSpeed.text = String.format(getString(R.string.cm_format_kmph), currentSpeed)
+
+        // Duration: check timer
+        if (mTimer == null) {
+            var timerDuration = duration
+            mTimer = Timer()
+            mTimer?.scheduleAtFixedRate(object : TimerTask() {
+                override fun run() {
+                    timerDuration += 1000
+                    mTvDuration.text = DateTimeUtils.convertMillisToHms(timerDuration)
+                }
+            }, 0, 1000)
+        }
     }
 
     private fun startLocationService() {
@@ -178,7 +208,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
                             val trackInfo = GsonHelper.getInstance().fromJson(strTrackInfo, TrackInfoEntity::class.java)
 
                             trackInfo?.let { valTrackInfo ->
-                                onLocationUpdate(valTrackInfo.points)
+                                onLocationUpdate(valTrackInfo)
                             }
                         }
                         else -> {

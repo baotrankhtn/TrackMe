@@ -1,17 +1,26 @@
 package com.baott.trackme.entities
 
 import android.location.Location
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
 
 /* 
  * Created by baotran on 2020-07-08 
  */
 
-class TrackInfoEntity {
+@Entity
+class SessionEntity {
+    @PrimaryKey
+    @ColumnInfo(name = "id")
+    var id: Long = 0
+    @ColumnInfo(name = "points")
     var points: MutableList<MyPoint> = ArrayList()
+    @ColumnInfo(name = "duration")
     var duration: Long = 0 // cached to speedup performance (millis)
+    @ColumnInfo(name = "distance")
     var distance: Float = 0f // cached (meter)
-    var averageSpeed: Float = 0f // cached (km/h)
 
     /**
      * Lat, Lng and time it takes to have this point
@@ -47,41 +56,12 @@ class TrackInfoEntity {
     }
 
     /**
-     * Total session distance in meter
-     */
-    fun calculateDistance(): Float {
-        var distance = 0f
-        if (points.size > 1) {
-            for (index in 1..(points.size - 1)) {
-                distance += calculateDistance(
-                    points[index].lat, points[index].lng,
-                    points[index - 1].lat, points[index - 1].lng
-                )
-            }
-        }
-        return distance
-    }
-
-    /**
-     * Total session duration in milliseconds
-     */
-    fun calculateDuration(): Long {
-        var duration = 0L
-        for (point in points) {
-            duration = duration + point.endTime - point.startTime
-        }
-        return duration
-    }
-
-    /**
      * Average speed in km/h
      */
     fun calculateAverageSpeed(): Float {
-        val duration = calculateDuration() // millis
         if (duration == 0L) {
             return 0f
         }
-        val distance = calculateDistance() // m
         return (distance / 1000f) / (duration / 3600000f)
     }
 

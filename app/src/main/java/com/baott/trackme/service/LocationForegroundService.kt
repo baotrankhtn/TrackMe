@@ -15,12 +15,11 @@ import android.os.Bundle
 import android.os.Looper
 import androidx.core.app.ActivityCompat
 import com.baott.trackme.constants.Constants
-import com.baott.trackme.entities.TrackInfoEntity
+import com.baott.trackme.entities.SessionEntity
 import com.baott.trackme.helpers.GsonHelper
 import com.baott.trackme.log.LOG
 import com.baott.trackme.ui.activities.record.RecordActivity
 import com.google.android.gms.location.*
-import java.util.*
 
 
 /*
@@ -34,7 +33,7 @@ class LocationForegroundService : Service() {
     private lateinit var mLocationCallback: LocationCallback
     private lateinit var mLocationRequest: LocationRequest
 
-    private val mTrackInfo = TrackInfoEntity()
+    private val mSessionInfo = SessionEntity()
     private var mTimeLastSave: Long = System.currentTimeMillis()
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
@@ -79,14 +78,14 @@ class LocationForegroundService : Service() {
         LOG.d("$lat/$lng")
 
         // Add point
-        mTrackInfo.addPoint(lat, lng, mTimeLastSave, System.currentTimeMillis())
+        mSessionInfo.addPoint(lat, lng, mTimeLastSave, System.currentTimeMillis())
         mTimeLastSave = System.currentTimeMillis()
 
         // Send broadcast
         val bundle = Bundle()
         val intent = Intent()
         intent.action = Constants.Actions.BROADCAST_FROM_LOCATION_SERVICE
-        bundle.putString(Constants.IntentParams.TRACKINFO, GsonHelper.getInstance().toJson(mTrackInfo))
+        bundle.putString(Constants.IntentParams.SESSION_INFO, GsonHelper.getInstance().toJson(mSessionInfo))
         intent.putExtras(bundle)
         sendBroadcast(intent)
     }

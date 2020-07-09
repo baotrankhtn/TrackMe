@@ -10,7 +10,9 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import com.baott.trackme.R
 import com.baott.trackme.constants.Constants
-import com.baott.trackme.entities.TrackInfoEntity
+import com.baott.trackme.db.RoomManager
+import com.baott.trackme.db.callbacks.IInsertSessionCallback
+import com.baott.trackme.entities.SessionEntity
 import com.baott.trackme.helpers.GsonHelper
 import com.baott.trackme.log.LOG
 import com.baott.trackme.service.LocationForegroundService
@@ -38,6 +40,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     private var mReceiver: BroadcastReceiver? = null
     private var mIsInForeground = false // Check if activity is in foreground
 
+    private var mSessionInfo: SessionEntity? = null
     private var mIndexRendered: Int = -1 // Index of latest rendered point on map
     private var mTimer: Timer? = null // Update duration every seconds
     private var mCountZoomToFit = 0 // Zoom map to fit all coordinates after n times
@@ -55,11 +58,6 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         super.onStart()
         // Foreground or background
         mIsInForeground = true
-    }
-
-    override fun onResume() {
-        super.onResume()
-        checkGps()
     }
 
     override fun onStop() {
@@ -90,8 +88,12 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
      * Location update from service
      * Maybe some points are not rendered when this activity is in background
      */
-    private fun onLocationUpdate(trackInfo: TrackInfoEntity) {
-        val points = trackInfo.points
+    private fun onLocationUpdate(sessionInfo: SessionEntity) {
+        // Save for later use
+        mSessionInfo = sessionInfo
+
+        // Process points
+        val points = sessionInfo.points
         LOG.d("Size: ${points.size}")
         if (points.size > 0) {
             // Show first point marker
@@ -114,7 +116,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
             showCurrentLocationMarker(points[points.size - 1].lat, points[points.size - 1].lng)
 
             // Update tracking info
-            updateTrackingInfo(trackInfo.distance, trackInfo.calculateCurrentSpeed(), trackInfo.duration)
+            updateTrackingInfo(sessionInfo.distance, sessionInfo.calculateCurrentSpeed(), sessionInfo.duration)
 
             // Zoom to fit
             if (mCountZoomToFit >= 5) {
@@ -133,7 +135,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     /**
      * For zooming camera to fit all coordinates
      */
-    private fun moveCameraToFitAllCoordinates(points: MutableList<TrackInfoEntity.MyPoint>) {
+    private fun moveCameraToFitAllCoordinates(points: MutableList<SessionEntity.MyPoint>) {
         val boundBuilder = LatLngBounds.Builder()
         for (point in points) {
             boundBuilder.include(LatLng(point.lat, point.lng))
@@ -162,7 +164,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
                 .position(LatLng(lat, lng))
                 .icon(
                     BitmapDescriptorFactory
-                        .fromBitmap(BitmapUtils.resizeBitmap(bitmap, 40))
+                        .fromBitmap(BitmapUtils.resizeBitmap(bitmap, 30))
                 )
         )
     }
@@ -286,7 +288,25 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         }
 
         mBtnStop.setOnClickListener {
+            // Stop service
             stopLocationService()
+
+            // Save to db
+            mSessionInfo?.let { valSessionInfo->
+                // Id is time in millis
+                valSessionInfo.id = System.currentTimeMillis()
+
+                RoomManager.insertSession(this@RecordActivity, valSessionInfo, object: IInsertSessionCallback {
+                    override fun onSuccess(sessionEntity: SessionEntity) {
+                        LOG.d("Insert session done")
+                        finish()
+                    }
+
+                    override fun onError(throwable: Throwable) {
+                        LOG.d("Insert session error")
+                    }
+                })
+            }
         }
     }
 
@@ -305,11 +325,11 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
                     when (it) {
                         Constants.Actions.BROADCAST_FROM_LOCATION_SERVICE -> {
                             // Parse data
-                            val strTrackInfo = intent.extras?.getString(Constants.IntentParams.TRACKINFO, null)
-                            val trackInfo = GsonHelper.getInstance().fromJson(strTrackInfo, TrackInfoEntity::class.java)
+                            val strSessionInfo = intent.extras?.getString(Constants.IntentParams.SESSION_INFO, null)
+                            val sessionInfo = GsonHelper.getInstance().fromJson(strSessionInfo, SessionEntity::class.java)
 
-                            trackInfo?.let { valTrackInfo ->
-                                onLocationUpdate(valTrackInfo)
+                            sessionInfo?.let { valSessionInfo ->
+                                onLocationUpdate(valSessionInfo)
                             }
                         }
                         else -> {

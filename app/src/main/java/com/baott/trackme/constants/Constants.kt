@@ -37,6 +37,6 @@ class Constants {
 
     // IntentParam
     object IntentParams {
-        const val TRACKINFO = "TRACKINFO"
+        const val SESSION_INFO = "SESSION_INFO"
     }
 }

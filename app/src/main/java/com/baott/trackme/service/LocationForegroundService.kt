@@ -40,16 +40,19 @@ class LocationForegroundService : Service() {
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         when (intent.action) {
             Constants.Actions.START_LOCATION_SERVICE -> {
+                LOG.d("Start location service")
                 val notification = createNotification()
                 startForeground(1, notification)
                 setupLocationClient()
             }
 
             Constants.Actions.PAUSE_LOCATION_SERVICE -> {
+                LOG.d("Pause location service")
                 stopLocationUpdates()
             }
 
             Constants.Actions.RESUME_LOCATION_SERVICE -> {
+                LOG.d("Resume location service")
                 startLocationUpdates()
 
                 // Update start time
@@ -94,7 +97,7 @@ class LocationForegroundService : Service() {
 
         // Set up request and callback
         mLocationRequest = LocationRequest()
-        mLocationRequest.priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
+        mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         mLocationRequest.interval = 5000
         mLocationRequest.fastestInterval = 3000
         mLocationRequest.smallestDisplacement = 5f // 5m

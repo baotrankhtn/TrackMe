@@ -29,16 +29,18 @@ import kotlinx.android.synthetic.main.activity_record.*
 import kotlinx.android.synthetic.main.partial_session_info.*
 import java.util.*
 
+
 class RecordActivity : BaseActivity(), OnMapReadyCallback {
     private lateinit var mMapFragment: SupportMapFragment
     private var mGoogleMap: GoogleMap? = null
     private var mMarkerCurrentPos: Marker? = null
 
     private var mReceiver: BroadcastReceiver? = null
-    private var mIndexRendered: Int = -1 // Index of latest rendered point on map
     private var mIsInForeground = false // Check if activity is in foreground
 
+    private var mIndexRendered: Int = -1 // Index of latest rendered point on map
     private var mTimer: Timer? = null // Update duration every seconds
+    private var mCountZoomToFit = 0 // Zoom map to fit all coordinates after n times
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,8 +67,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         mIsInForeground = false
 
         // Timer
-        mTimer?.cancel()
-        mTimer = null
+        cancelTimer()
 
         super.onStop()
     }
@@ -93,7 +94,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         val points = trackInfo.points
         LOG.d("Size: ${points.size}")
         if (points.size > 0) {
-            // First point: show marker
+            // Show first point marker
             if (mIndexRendered == -1) {
                 moveCamera(points[0].lat, points[0].lng)
                 showStartMarker(points[0].lat, points[0].lng)
@@ -109,16 +110,37 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
                 }
             }
 
-            // Show current position
+            // Show current position marker
             showCurrentLocationMarker(points[points.size - 1].lat, points[points.size - 1].lng)
 
             // Update tracking info
             updateTrackingInfo(trackInfo.distance, trackInfo.calculateCurrentSpeed(), trackInfo.duration)
+
+            // Zoom to fit
+            if (mCountZoomToFit >= 5) {
+                moveCameraToFitAllCoordinates(points)
+                mCountZoomToFit = 0
+            } else {
+                mCountZoomToFit++
+            }
         }
     }
 
     private fun moveCamera(lat: Double, lng: Double) {
         mGoogleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 23f))
+    }
+
+    /**
+     * For zooming camera to fit all coordinates
+     */
+    private fun moveCameraToFitAllCoordinates(points: MutableList<TrackInfoEntity.MyPoint>) {
+        val boundBuilder = LatLngBounds.Builder()
+        for (point in points) {
+            boundBuilder.include(LatLng(point.lat, point.lng))
+        }
+        val padding = 30 // offset from edges of the map in pixels
+        val cu = CameraUpdateFactory.newLatLngBounds(boundBuilder.build(), padding)
+        mGoogleMap?.animateCamera(cu)
     }
 
     private fun drawLine(lat: Double, lng: Double, nextLat: Double, nextLng: Double) {
@@ -215,18 +237,23 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
      */
     private fun showState(state: Int) {
         when (state) {
-            0-> {
+            0 -> {
                 mBtnPause.visibility = View.GONE
                 mBtnResume.visibility = View.VISIBLE
                 mBtnStop.visibility = View.VISIBLE
             }
 
-            1-> {
+            1 -> {
                 mBtnPause.visibility = View.VISIBLE
                 mBtnResume.visibility = View.GONE
                 mBtnStop.visibility = View.GONE
             }
         }
+    }
+
+    private fun cancelTimer() {
+        mTimer?.cancel()
+        mTimer = null
     }
 
     private fun initView() {
@@ -236,16 +263,25 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
 
     private fun initListener() {
         mBtnPause.setOnClickListener {
+            // Send event to service
             val serviceIntent = Intent(this@RecordActivity, LocationForegroundService::class.java)
             serviceIntent.action = Constants.Actions.PAUSE_LOCATION_SERVICE
             ContextCompat.startForegroundService(this@RecordActivity, serviceIntent)
+
+            // Cancel timer
+            cancelTimer()
+
+            // Update ui
             showState(0)
         }
 
         mBtnResume.setOnClickListener {
+            // Send event to service
             val serviceIntent = Intent(this@RecordActivity, LocationForegroundService::class.java)
             serviceIntent.action = Constants.Actions.RESUME_LOCATION_SERVICE
             ContextCompat.startForegroundService(this@RecordActivity, serviceIntent)
+
+            // Update ui
             showState(1)
         }
 

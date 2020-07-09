@@ -135,11 +135,4 @@ class TrackInfoEntity {
 
         return loc1.distanceTo(loc2)
     }
-
-    fun isStartPoint(): Boolean {
-        if (points.size == 1) {
-            return true
-        }
-        return false
-    }
 }

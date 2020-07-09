@@ -52,7 +52,7 @@ class TrackInfoEntity {
     fun calculateDistance(): Float {
         var distance = 0f
         if (points.size > 1) {
-            for (index in 1 until points.size - 1) {
+            for (index in 1..(points.size - 1)) {
                 distance += calculateDistance(
                     points[index].lat, points[index].lng,
                     points[index - 1].lat, points[index - 1].lng
@@ -77,9 +77,12 @@ class TrackInfoEntity {
      * Average speed in km/h
      */
     fun calculateAverageSpeed(): Float {
-        val distance = calculateDistance() // m
         val duration = calculateDuration() // millis
-        return (distance / 1000) / (duration / 3600000)
+        if (duration == 0L) {
+            return 0f
+        }
+        val distance = calculateDistance() // m
+        return (distance / 1000f) / (duration / 3600000f)
     }
 
     /**
@@ -103,7 +106,8 @@ class TrackInfoEntity {
                 (points[lastIndex].endTime - points[lastIndex].startTime)
             +(points[secondLastIndex].endTime - points[secondLastIndex].startTime)
             +(points[thirdLastIndex].endTime - points[thirdLastIndex].startTime)
-            return distance
+
+            return (distance / 1000f) / (duration / 3600000f)
         }
         return calculateAverageSpeed()
     }

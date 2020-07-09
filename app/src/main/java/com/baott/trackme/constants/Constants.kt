@@ -30,6 +30,9 @@ class Constants {
     // Broadcast receiver
     object Actions {
         const val BROADCAST_FROM_LOCATION_SERVICE = "BROADCAST_FROM_LOCATION_SERVICE"
+        const val START_LOCATION_SERVICE = "START_LOCATION_SERVICE"
+        const val PAUSE_LOCATION_SERVICE = "PAUSE_LOCATION_SERVICE"
+        const val RESUME_LOCATION_SERVICE = "RESUME_LOCATION_SERVICE"
     }
 
     // IntentParam

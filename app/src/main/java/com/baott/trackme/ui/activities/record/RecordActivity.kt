@@ -6,11 +6,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.view.View
 import androidx.core.content.ContextCompat
 import com.baott.trackme.R
 import com.baott.trackme.constants.Constants
 import com.baott.trackme.entities.TrackInfoEntity
 import com.baott.trackme.helpers.GsonHelper
+import com.baott.trackme.log.LOG
 import com.baott.trackme.service.LocationForegroundService
 import com.baott.trackme.ui.base.BaseActivity
 import com.baott.trackme.utils.BitmapUtils
@@ -22,16 +24,15 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.*
+import kotlinx.android.synthetic.main.activity_record.*
 import kotlinx.android.synthetic.main.partial_session_info.*
 import java.util.*
 
 class RecordActivity : BaseActivity(), OnMapReadyCallback {
     private lateinit var mMapFragment: SupportMapFragment
     private var mGoogleMap: GoogleMap? = null
+    private var mMarkerCurrentPos: Marker? = null
 
     private var mReceiver: BroadcastReceiver? = null
     private var mIndexRendered: Int = -1 // Index of latest rendered point on map
@@ -43,15 +44,15 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_record)
         initView()
+        initListener()
         initBroadcastReceiver()
+        startLocationService()
     }
 
     override fun onStart() {
         super.onStart()
         // Foreground or background
         mIsInForeground = true
-
-        startLocationService()
     }
 
     override fun onResume() {
@@ -90,21 +91,26 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
      */
     private fun onLocationUpdate(trackInfo: TrackInfoEntity) {
         val points = trackInfo.points
+        LOG.d("Size: ${points.size}")
         if (points.size > 0) {
             // First point: show marker
             if (mIndexRendered == -1) {
                 moveCamera(points[0].lat, points[0].lng)
-                showStartMarker(LatLng(points[0].lat, points[0].lng))
+                showStartMarker(points[0].lat, points[0].lng)
                 mIndexRendered = 0 // update render index
             }
 
             // Render missing points
             if (mIndexRendered < points.size - 1) {
-                for (index in mIndexRendered + 1 until points.size - 1) {
+                for (index in (mIndexRendered + 1)..(points.size - 1)) {
                     drawLine(points[index - 1].lat, points[index - 1].lng, points[index].lat, points[index].lng)
                     mIndexRendered = index // update render index
+                    LOG.d("Render index: $mIndexRendered")
                 }
             }
+
+            // Show current position
+            showCurrentLocationMarker(points[points.size - 1].lat, points[points.size - 1].lng)
 
             // Update tracking info
             updateTrackingInfo(trackInfo.distance, trackInfo.calculateCurrentSpeed(), trackInfo.duration)
@@ -116,21 +122,37 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     }
 
     private fun drawLine(lat: Double, lng: Double, nextLat: Double, nextLng: Double) {
-        val options = PolylineOptions().width(8f).color(ContextCompat.getColor(this, R.color.colorPrimary))
+        val options = PolylineOptions().width(10f).color(ContextCompat.getColor(this, R.color.colorPrimary))
         options.add(LatLng(lat, lng))
         options.add(LatLng(nextLat, nextLng))
         mGoogleMap?.addPolyline(options)
     }
 
-    private fun showStartMarker(latlng: LatLng) {
+    private fun showCurrentLocationMarker(lat: Double, lng: Double) {
+        mMarkerCurrentPos?.remove()
+
+        val bitmap = BitmapFactory.decodeResource(
+            resources,
+            R.drawable.ic_my_location
+        )
+        mMarkerCurrentPos = mGoogleMap?.addMarker(
+            MarkerOptions()
+                .position(LatLng(lat, lng))
+                .icon(
+                    BitmapDescriptorFactory
+                        .fromBitmap(BitmapUtils.resizeBitmap(bitmap, 40))
+                )
+        )
+    }
+
+    private fun showStartMarker(lat: Double, lng: Double) {
         val bitmap = BitmapFactory.decodeResource(
             resources,
             R.drawable.ic_start_location
         )
         mGoogleMap?.addMarker(
             MarkerOptions()
-                .position(latlng)
-                .title("Wrong Turn!")
+                .position(LatLng(lat, lng))
                 .icon(
                     BitmapDescriptorFactory
                         .fromBitmap(BitmapUtils.resizeBitmap(bitmap, 100))
@@ -166,7 +188,9 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
             override fun permissionGranted() {
                 if (LocationUtils.isGpsAvailable()) {
                     val serviceIntent = Intent(this@RecordActivity, LocationForegroundService::class.java)
+                    serviceIntent.action = Constants.Actions.START_LOCATION_SERVICE
                     ContextCompat.startForegroundService(this@RecordActivity, serviceIntent)
+                    showState(1)
                 }
             }
 
@@ -184,9 +208,50 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         stopService(serviceIntent)
     }
 
+    /**
+     * State of running service
+     * 0: pause
+     * 1: running
+     */
+    private fun showState(state: Int) {
+        when (state) {
+            0-> {
+                mBtnPause.visibility = View.GONE
+                mBtnResume.visibility = View.VISIBLE
+                mBtnStop.visibility = View.VISIBLE
+            }
+
+            1-> {
+                mBtnPause.visibility = View.VISIBLE
+                mBtnResume.visibility = View.GONE
+                mBtnStop.visibility = View.GONE
+            }
+        }
+    }
+
     private fun initView() {
         mMapFragment = supportFragmentManager.findFragmentById(R.id.mMap) as SupportMapFragment
         mMapFragment.getMapAsync(this)
+    }
+
+    private fun initListener() {
+        mBtnPause.setOnClickListener {
+            val serviceIntent = Intent(this@RecordActivity, LocationForegroundService::class.java)
+            serviceIntent.action = Constants.Actions.PAUSE_LOCATION_SERVICE
+            ContextCompat.startForegroundService(this@RecordActivity, serviceIntent)
+            showState(0)
+        }
+
+        mBtnResume.setOnClickListener {
+            val serviceIntent = Intent(this@RecordActivity, LocationForegroundService::class.java)
+            serviceIntent.action = Constants.Actions.RESUME_LOCATION_SERVICE
+            ContextCompat.startForegroundService(this@RecordActivity, serviceIntent)
+            showState(1)
+        }
+
+        mBtnStop.setOnClickListener {
+            stopLocationService()
+        }
     }
 
     private fun initBroadcastReceiver() {

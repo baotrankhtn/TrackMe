@@ -30,9 +30,6 @@ import java.util.*
 class LocationForegroundService : Service() {
     val ID_NOTIFICATION_CHANNEL = "ID_1234"
 
-    private val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 5000
-    private val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS: Long = 3000
-
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
     private lateinit var mLocationCallback: LocationCallback
     private lateinit var mLocationRequest: LocationRequest
@@ -41,9 +38,25 @@ class LocationForegroundService : Service() {
     private var mTimeLastSave: Long = System.currentTimeMillis()
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val notification = createNotification()
-        startForeground(1, notification)
-        setupLocationClient()
+        when (intent.action) {
+            Constants.Actions.START_LOCATION_SERVICE -> {
+                val notification = createNotification()
+                startForeground(1, notification)
+                setupLocationClient()
+            }
+
+            Constants.Actions.PAUSE_LOCATION_SERVICE -> {
+                stopLocationUpdates()
+            }
+
+            Constants.Actions.RESUME_LOCATION_SERVICE -> {
+                startLocationUpdates()
+
+                // Update start time
+                mTimeLastSave = System.currentTimeMillis()
+            }
+        }
+
         return START_NOT_STICKY
     }
 
@@ -81,9 +94,10 @@ class LocationForegroundService : Service() {
 
         // Set up request and callback
         mLocationRequest = LocationRequest()
-        mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        mLocationRequest.interval = UPDATE_INTERVAL_IN_MILLISECONDS
-        mLocationRequest.fastestInterval = FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS
+        mLocationRequest.priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
+        mLocationRequest.interval = 5000
+        mLocationRequest.fastestInterval = 3000
+        mLocationRequest.smallestDisplacement = 5f // 5m
 
         mLocationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {

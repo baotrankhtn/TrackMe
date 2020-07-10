@@ -133,7 +133,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
             updateTrackingInfo(sessionInfo.distance, sessionInfo.calculateCurrentSpeed(), sessionInfo.duration)
 
             // Zoom to fit
-            if (mCountZoomToFit >= 5) {
+            if (mCountZoomToFit >= 4) {
                 moveCameraToFitAllCoordinates()
                 mCountZoomToFit = 0
             } else {

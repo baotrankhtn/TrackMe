@@ -26,10 +26,10 @@ Tracking speed, distance and duration during workout sessions on Android devices
 - SupportMapFragment is used to show map and render markers, lines
 - Animate GoogleMap camera to fit all coordinates
 - Current speed is calculated on 3 latest coordinates
-- When finishing a session, animate camera to fit all coordinates then take a snapshot of GoogleMap, save to internal storage. That image is the feature image of session in History screen. This application supposes that internet connection is available to render map information when ending an session 
+- When finishing a session, animate camera to fit all coordinates then take a snapshot of GoogleMap, save to internal storage. That image is the route image of session in History screen. This application supposes that internet connection is available to render map information when ending an session 
 
 # History screen
 <img src="https://user-images.githubusercontent.com/18632073/87135841-d029cb80-c2c4-11ea-8b5b-34aa5e608339.png" width="200">
 
 - Can load more when reaching the bottom of the list
-- Feature image for each session is from internal storage
+- Route image for each session is from internal storage

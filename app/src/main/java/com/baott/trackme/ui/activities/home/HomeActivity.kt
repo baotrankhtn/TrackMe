@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.os.Handler
 import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
@@ -14,7 +15,9 @@ import com.baott.trackme.R
 import com.baott.trackme.adapters.SessionHistoryAdapter
 import com.baott.trackme.constants.Constants
 import com.baott.trackme.entities.SessionEntity
+import com.baott.trackme.helpers.EndlessRecyclerViewScrollListener
 import com.baott.trackme.helpers.GsonHelper
+import com.baott.trackme.log.LOG
 import com.baott.trackme.ui.activities.record.RecordActivity
 import com.baott.trackme.ui.base.BaseActivity
 import com.baott.trackme.ui.viewmodel.NewsListViewModel
@@ -27,10 +30,12 @@ import kotlinx.android.synthetic.main.activity_home.*
 
 
 class HomeActivity : BaseActivity() {
+    private lateinit var mScrollListener: EndlessRecyclerViewScrollListener
     private lateinit var mAdapter: SessionHistoryAdapter
     private lateinit var mLayoutManager: LinearLayoutManager
     private lateinit var mViewModel: SessionViewModel
     private var mReceiver: MyReceiver? = null
+    private var mHandler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,18 +44,22 @@ class HomeActivity : BaseActivity() {
         initListener()
         initBroadcastReceiver()
         initViewModel()
-        loadData()
+        loadData(System.currentTimeMillis())
     }
 
     override fun onDestroy() {
         mReceiver?.let {
             unregisterReceiver(it)
         }
+        mHandler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
 
-    private fun loadData() {
-        mViewModel.requestSessionHistory(0, 20)
+    /**
+     * Get sessions whose id < afterId
+     */
+    private fun loadData(afterId: Long) {
+        mViewModel.requestSessionHistory(afterId, 7)
     }
 
     private fun initView() {
@@ -66,6 +75,24 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun initListener() {
+        // Load more
+        mScrollListener = object : EndlessRecyclerViewScrollListener(mLayoutManager) {
+            override fun onLoadMore(page: Int, totalItemsCount: Int) {
+                if (!mAdapter.isLoadingMore()) {
+                    LOG.d("Load more")
+                    val lastItem = mAdapter.getItem(mAdapter.itemCount - 1)
+                    if (lastItem is SessionEntity) {
+                        mAdapter.addLoadingMore()
+                        mHandler.postDelayed({
+                            loadData(lastItem.id)
+                        }, 500)
+                    }
+                }
+            }
+        }
+        mRecyclerView.addOnScrollListener(mScrollListener)
+
+        // Record
         mBtnRecord.setOnClickListener {
             if (LocationUtils.isGpsAvailable()) {
                 askCompactPermissions(arrayOf(
@@ -99,13 +126,19 @@ class HomeActivity : BaseActivity() {
     private fun initViewModel() {
         mViewModel = ViewModelProviders.of(this).get(SessionViewModel::class.java)
         mViewModel.getSessionHistory().observe(this, Observer {
-            if (it.isNullOrEmpty()) {
-                mTvNoHistory.visibility = View.VISIBLE
-            } else {
-                mTvNoHistory.visibility = View.GONE
+            // Remove loading more if needed
+            mAdapter.removeLoading()
 
-                // Show data
-                mAdapter.setData(it as MutableList<Any?>)
+            // Set data
+            if (!it.isNullOrEmpty()) {
+                mAdapter.addData(it as MutableList<Any?>)
+            }
+
+            // Remove loading screen
+            if (mViewLoading.visibility == View.VISIBLE) {
+                mHandler.postDelayed({
+                    mViewLoading.visibility = View.GONE
+                }, 500)
             }
         })
     }
@@ -121,6 +154,9 @@ class HomeActivity : BaseActivity() {
                         sessionInfo?.let { valSessionInfo ->
                             mTvNoHistory.visibility = View.GONE
                             mAdapter.insertItem(valSessionInfo, 0)
+
+                            // Scroll to top
+                            mLayoutManager.scrollToPositionWithOffset(0, 0)
                         }
                     }
                     else -> {

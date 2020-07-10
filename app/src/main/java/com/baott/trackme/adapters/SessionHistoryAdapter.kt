@@ -12,6 +12,9 @@ import com.baott.trackme.adapters.base.LoadingViewHolder
 import com.baott.trackme.entities.BaseLoadingEntity
 import com.baott.trackme.entities.SessionEntity
 import com.baott.trackme.utils.DateTimeUtils
+import com.baott.trackme.utils.StorageUtils
+import com.bumptech.glide.Glide
+import kotlinx.android.synthetic.main.item_session_history.view.*
 import kotlinx.android.synthetic.main.partial_session_info.view.*
 
 
@@ -31,6 +34,8 @@ class SessionHistoryAdapter(context: Context) : BaseAdapter<Any?>(context) {
                 holder = MyViewHolder(view)
             }
             ViewType.LOADING -> {
+                view = LayoutInflater.from(parent.context).inflate(R.layout.item_loading, parent, false)
+                holder = LoadingViewHolder(view)
             }
         }
         return holder
@@ -63,11 +68,10 @@ class SessionHistoryAdapter(context: Context) : BaseAdapter<Any?>(context) {
         override fun bind(item: SessionEntity?, position: Int) {
             item?.let { valItem ->
                 // Image
-//                valItem.posterPath?.let {
-//                    Glide.with(itemView.context)
-//                        .load(StringUtils.generatePosterUrl(it))
-//                        .into(itemView.mIvPoster)
-//                }
+                Glide.with(itemView.context)
+                    .asBitmap()
+                    .load(StorageUtils.createInternalImageFilePath(mContext, valItem.id.toString()))
+                    .into(itemView.mIv)
 
                 // Distance
                 itemView.mTvDistance.text =

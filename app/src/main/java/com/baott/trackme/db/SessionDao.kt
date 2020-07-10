@@ -12,13 +12,9 @@ import com.baott.trackme.entities.SessionEntity
 
 @Dao
 interface SessionDao {
-    @Query("SELECT * FROM SessionEntity ORDER BY id DESC LIMIT :pageSize")
-    fun getSessionHistory(pageSize: Int): MutableList<SessionEntity>
+    @Query("SELECT * FROM SessionEntity WHERE (id < :afterId) ORDER BY id DESC LIMIT :pageSize")
+    fun getSessionHistory(afterId: Long, pageSize: Int): MutableList<SessionEntity>
 
-    //
-//    @Query("SELECT * FROM ChatContentEntity WHERE mid < :mId ORDER BY mid DESC LIMIT 20")
-//    fun getPreviousMessagesExcludeCurrentMessage(mId: String): MutableList<ChatContentEntity>
-//
     @Insert
     fun insert(message: SessionEntity)
 

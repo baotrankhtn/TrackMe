@@ -4,10 +4,10 @@ import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.app.Activity
 import android.os.Build
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
 import android.view.View
 import android.view.WindowManager
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 
 
 /*
@@ -24,7 +24,7 @@ object ViewUtils {
     /**
      * Change background color with animation
      */
-    fun changeBackgroundColorWithAnimation(view : View, colorFrom : Int, colorTo : Int, duration : Long) {
+    fun changeBackgroundColorWithAnimation(view: View, colorFrom: Int, colorTo: Int, duration: Long) {
         val colorAnimation = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
         colorAnimation.duration = duration // milliseconds
         colorAnimation.addUpdateListener { animator -> view.setBackgroundColor(animator.animatedValue as Int) }

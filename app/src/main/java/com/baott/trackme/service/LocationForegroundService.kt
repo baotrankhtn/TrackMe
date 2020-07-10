@@ -97,9 +97,9 @@ class LocationForegroundService : Service() {
         // Set up request and callback
         mLocationRequest = LocationRequest()
         mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        mLocationRequest.interval = 5000
-        mLocationRequest.fastestInterval = 3000
-        mLocationRequest.smallestDisplacement = 5f // 5m
+        mLocationRequest.interval = 3000
+        mLocationRequest.fastestInterval = 2000
+        mLocationRequest.smallestDisplacement = 2f // m
 
         mLocationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {

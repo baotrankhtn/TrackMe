@@ -106,10 +106,12 @@ abstract class BaseAdapter<T : Any?> : RecyclerView.Adapter<RecyclerView.ViewHol
      * Remove loading before setting or adding data
      */
     fun removeLoading() {
-        val lastIndex = mDataList.size - 1
-        val lastItem : T? = mDataList[lastIndex]
-        if (lastItem is BaseLoadingEntity) {
-            removeItem(lastIndex)
+        if (itemCount > 0) {
+            val lastIndex = mDataList.size - 1
+            val lastItem: T? = mDataList[lastIndex]
+            if (lastItem is BaseLoadingEntity) {
+                removeItem(lastIndex)
+            }
         }
     }
 

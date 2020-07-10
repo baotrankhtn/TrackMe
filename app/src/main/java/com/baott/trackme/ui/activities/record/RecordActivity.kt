@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.os.Handler
 import android.view.View
+import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
 import com.baott.trackme.R
 import com.baott.trackme.constants.Constants
@@ -20,6 +22,7 @@ import com.baott.trackme.ui.base.BaseActivity
 import com.baott.trackme.utils.BitmapUtils
 import com.baott.trackme.utils.DateTimeUtils
 import com.baott.trackme.utils.LocationUtils
+import com.baott.trackme.utils.StorageUtils
 import com.blab.moviestv.ui.base.permission.PermissionResult
 import com.blab.moviestv.ui.base.permission.PermissionUtils
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -44,6 +47,8 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     private var mIndexRendered: Int = -1 // Index of latest rendered point on map
     private var mTimer: Timer? = null // Update duration every seconds
     private var mCountZoomToFit = 0 // Zoom map to fit all coordinates after n times
+
+    private var mHandler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,7 +80,11 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         mReceiver?.let {
             unregisterReceiver(mReceiver)
         }
+        mHandler.removeCallbacksAndMessages(null)
         super.onDestroy()
+    }
+
+    override fun onBackPressed() {
     }
 
     override fun onMapReady(googleMap: GoogleMap?) {
@@ -120,7 +129,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
 
             // Zoom to fit
             if (mCountZoomToFit >= 5) {
-                moveCameraToFitAllCoordinates(points)
+                moveCameraToFitAllCoordinates()
                 mCountZoomToFit = 0
             } else {
                 mCountZoomToFit++
@@ -129,20 +138,25 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     }
 
     private fun moveCamera(lat: Double, lng: Double) {
-        mGoogleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 23f))
+        mGoogleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 25f))
     }
 
     /**
      * For zooming camera to fit all coordinates
      */
-    private fun moveCameraToFitAllCoordinates(points: MutableList<SessionEntity.MyPoint>) {
-        val boundBuilder = LatLngBounds.Builder()
-        for (point in points) {
-            boundBuilder.include(LatLng(point.lat, point.lng))
+    private fun moveCameraToFitAllCoordinates(animateCallback: GoogleMap.CancelableCallback? = null) {
+        mSessionInfo?.let {
+            val points = it.points
+            if (points.size > 0) {
+                val boundBuilder = LatLngBounds.Builder()
+                for (point in points) {
+                    boundBuilder.include(LatLng(point.lat, point.lng))
+                }
+                val padding = 30 // offset from edges of the map in pixels
+                val cu = CameraUpdateFactory.newLatLngBounds(boundBuilder.build(), padding)
+                mGoogleMap?.animateCamera(cu, animateCallback)
+            }
         }
-        val padding = 30 // offset from edges of the map in pixels
-        val cu = CameraUpdateFactory.newLatLngBounds(boundBuilder.build(), padding)
-        mGoogleMap?.animateCamera(cu)
     }
 
     private fun drawLine(lat: Double, lng: Double, nextLat: Double, nextLng: Double) {
@@ -292,27 +306,69 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
             stopLocationService()
 
             // Save to db
-            mSessionInfo?.let { valSessionInfo->
-                // Id is time in millis
-                valSessionInfo.id = System.currentTimeMillis()
+            mSessionInfo?.let { valSessionInfo ->
+                if (!valSessionInfo.points.isNullOrEmpty()) {
+                    // Id is time in millis
+                    valSessionInfo.id = System.currentTimeMillis()
 
-                RoomManager.insertSession(this@RecordActivity, valSessionInfo, object: IInsertSessionCallback {
-                    override fun onSuccess(sessionEntity: SessionEntity) {
-                        LOG.d("Insert session done")
+                    RoomManager.insertSession(this@RecordActivity, valSessionInfo, object : IInsertSessionCallback {
+                        override fun onSuccess(sessionEntity: SessionEntity) {
+                            LOG.d("Insert session done")
 
-                        // Notify history screen
-                        val intent = Intent()
-                        intent.action = Constants.Actions.NEW_SAVED_SESSION
-                        intent.putExtra(Constants.IntentParams.SESSION_INFO, GsonHelper.getInstance().toJson(sessionEntity))
-                        sendBroadcast(intent)
+                            // Resize map to make smaller image
+                            mMapFragment.view?.layoutParams = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                600
+                            )
 
-                        finish()
-                    }
+                            // Wait and move camera to fit all points
+                            mHandler.postDelayed({
+                                moveCameraToFitAllCoordinates(object : GoogleMap.CancelableCallback {
+                                    override fun onFinish() {
+                                        LOG.d("Google map animates done")
 
-                    override fun onError(throwable: Throwable) {
-                        LOG.d("Insert session error")
-                    }
-                })
+                                        // Create bitmap from google map
+                                        mGoogleMap?.snapshot { bitmap ->
+                                            // Save bitmap to local: name of bitmap is the id of session
+                                            StorageUtils.saveBitmapToInternal(
+                                                this@RecordActivity,
+                                                bitmap,
+                                                valSessionInfo.id.toString()
+                                            )
+
+                                            // Notify history screen
+                                            val intent = Intent()
+                                            intent.action = Constants.Actions.NEW_SAVED_SESSION
+                                            intent.putExtra(
+                                                Constants.IntentParams.SESSION_INFO,
+                                                GsonHelper.getInstance().toJson(sessionEntity)
+                                            )
+                                            sendBroadcast(intent)
+
+                                            finish()
+                                        }
+                                    }
+
+                                    override fun onCancel() {
+                                        LOG.d("Google map animates error")
+                                        finish()
+                                    }
+                                })
+                            }, 500)
+                        }
+
+                        override fun onError(throwable: Throwable) {
+                            LOG.d("Insert session error")
+                            finish()
+                        }
+                    })
+                } else {
+                    LOG.d("No session to save")
+                    finish()
+                }
+            } ?: run {
+                LOG.d("No session to save")
+                finish()
             }
         }
     }
@@ -333,7 +389,8 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
                         Constants.Actions.UPDATE_LOCATION -> {
                             // Parse data
                             val strSessionInfo = intent.extras?.getString(Constants.IntentParams.SESSION_INFO, null)
-                            val sessionInfo = GsonHelper.getInstance().fromJson(strSessionInfo, SessionEntity::class.java)
+                            val sessionInfo =
+                                GsonHelper.getInstance().fromJson(strSessionInfo, SessionEntity::class.java)
 
                             sessionInfo?.let { valSessionInfo ->
                                 onLocationUpdate(valSessionInfo)

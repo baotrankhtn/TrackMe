@@ -15,9 +15,9 @@ import io.reactivex.schedulers.Schedulers
 
 object RoomManager {
     @SuppressLint("CheckResult")
-    fun getSessionHistory(context: Context, pageIndex: Int, pageSize: Int, callback: IGetSessionHistoryCallback?) {
+    fun getSessionHistory(context: Context, afterId: Long, pageSize: Int, callback: IGetSessionHistoryCallback?) {
         Observable.fromCallable {
-            AppDatabase.getInstance(context)?.sessionDao()?.getSessionHistory(pageSize)
+            AppDatabase.getInstance(context)?.sessionDao()?.getSessionHistory(afterId, pageSize)
         }
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())

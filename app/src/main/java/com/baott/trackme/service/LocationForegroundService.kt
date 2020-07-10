@@ -57,6 +57,12 @@ class LocationForegroundService : Service() {
                 // Update start time
                 mTimeLastSave = System.currentTimeMillis()
             }
+
+            Constants.Actions.REQUEST_UPDATE_LOCATION_SERVICE -> {
+                LOG.d("Request update location service")
+                stopLocationUpdates()
+                startLocationUpdates()
+            }
         }
 
         return START_NOT_STICKY
@@ -111,8 +117,6 @@ class LocationForegroundService : Service() {
                 }
             }
         }
-
-        startLocationUpdates()
     }
 
     private fun startLocationUpdates() {

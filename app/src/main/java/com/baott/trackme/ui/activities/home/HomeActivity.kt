@@ -94,10 +94,10 @@ class HomeActivity : BaseActivity() {
 
         // Record
         mBtnRecord.setOnClickListener {
+            mBtnRecord.isEnabled = false
             if (LocationUtils.isGpsAvailable()) {
                 askCompactPermissions(arrayOf(
-                    PermissionUtils.Manifest_ACCESS_FINE_LOCATION,
-                    PermissionUtils.Manifest_ACCESS_COARSE_LOCATION
+                    PermissionUtils.Manifest_ACCESS_FINE_LOCATION
                 ), object : PermissionResult {
                     override fun permissionGranted() {
                         IntentUtils.openActivity(this@HomeActivity, RecordActivity::class.java, null, false)
@@ -113,6 +113,11 @@ class HomeActivity : BaseActivity() {
             } else {
                 showDialogGps()
             }
+
+            // Avoid double click
+            mHandler.postDelayed({
+                mBtnRecord.isEnabled = true
+            }, 300)
         }
     }
 
@@ -132,6 +137,12 @@ class HomeActivity : BaseActivity() {
             // Set data
             if (!it.isNullOrEmpty()) {
                 mAdapter.addData(it as MutableList<Any?>)
+            }
+
+            if (mAdapter.itemCount > 0) {
+                mTvNoHistory.visibility = View.GONE
+            } else {
+                mTvNoHistory.visibility = View.VISIBLE
             }
 
             // Remove loading screen
@@ -165,6 +176,5 @@ class HomeActivity : BaseActivity() {
                 }
             }
         }
-
     }
 }

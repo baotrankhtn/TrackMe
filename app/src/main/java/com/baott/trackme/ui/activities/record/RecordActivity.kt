@@ -65,6 +65,11 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
         mIsInForeground = true
     }
 
+    override fun onResume() {
+        super.onResume()
+        requestLocationUpdate()
+    }
+
     override fun onStop() {
         // Foreground or background
         mIsInForeground = false
@@ -220,8 +225,7 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
 
     private fun startLocationService() {
         askCompactPermissions(arrayOf(
-            PermissionUtils.Manifest_ACCESS_FINE_LOCATION,
-            PermissionUtils.Manifest_ACCESS_COARSE_LOCATION
+            PermissionUtils.Manifest_ACCESS_FINE_LOCATION
         ), object : PermissionResult {
             override fun permissionGranted() {
                 if (LocationUtils.isGpsAvailable()) {
@@ -270,6 +274,12 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     private fun cancelTimer() {
         mTimer?.cancel()
         mTimer = null
+    }
+
+    private fun requestLocationUpdate() {
+        val serviceIntent = Intent(this@RecordActivity, LocationForegroundService::class.java)
+        serviceIntent.action = Constants.Actions.REQUEST_UPDATE_LOCATION_SERVICE
+        ContextCompat.startForegroundService(this@RecordActivity, serviceIntent)
     }
 
     private fun initView() {

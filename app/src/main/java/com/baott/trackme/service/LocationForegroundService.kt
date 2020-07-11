@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.os.Looper
 import androidx.core.app.ActivityCompat
 import com.baott.trackme.constants.Constants
+import com.baott.trackme.db.SharedPreferencesManager
 import com.baott.trackme.entities.SessionEntity
 import com.baott.trackme.helpers.GsonHelper
 import com.baott.trackme.log.LOG
@@ -33,43 +34,82 @@ class LocationForegroundService : Service() {
     private lateinit var mLocationCallback: LocationCallback
     private lateinit var mLocationRequest: LocationRequest
 
-    private val mSessionInfo = SessionEntity()
+    private var mSessionInfo = SessionEntity()
     private var mTimeLastSave: Long = System.currentTimeMillis()
 
-    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        when (intent.action) {
-            Constants.Actions.START_LOCATION_SERVICE -> {
-                LOG.d("Start location service")
-                val notification = createNotification()
-                startForeground(1, notification)
-                setupLocationClient()
+    companion object {
+        var isServiceRunning = false
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        intent?.let {
+            when (it.action) {
+                Constants.Actions.START_LOCATION_SERVICE -> {
+                    LOG.d("Start location service")
+                    val notification = createNotification()
+                    startForeground(1, notification)
+                    setupLocationClient()
+
+                    isServiceRunning = true
+                }
+
+                Constants.Actions.STOP_LOCATION_SERVICE -> {
+                    LOG.d("Stop location service")
+
+                    // Remove temp info
+                    SharedPreferencesManager.getInstance().setTempSessionInfo(this, null)
+
+                    stopForeground(true)
+                    stopSelf()
+                }
+
+                Constants.Actions.PAUSE_LOCATION_SERVICE -> {
+                    LOG.d("Pause location service")
+                    stopLocationUpdates()
+                }
+
+                Constants.Actions.RESUME_LOCATION_SERVICE -> {
+                    LOG.d("Resume location service")
+                    startLocationUpdates()
+
+                    // Update start time
+                    mTimeLastSave = System.currentTimeMillis()
+                }
+
+                Constants.Actions.REQUEST_UPDATE_LOCATION_SERVICE -> {
+                    LOG.d("Request update location service")
+                    stopLocationUpdates()
+                    startLocationUpdates()
+                }
+            }
+        } ?: run {
+            LOG.d("Service restarted after being killed. Start location service")
+            val notification = createNotification()
+            startForeground(1, notification)
+            setupLocationClient()
+
+            // Get temp data
+            mTimeLastSave = System.currentTimeMillis()
+            val tempInfo = SharedPreferencesManager.getInstance().getTempSessionInfo(this)
+            tempInfo?.let {
+                LOG.d("Temp info detected")
+                mSessionInfo = it
+            } ?: run {
+                LOG.d("No temp info")
+                mSessionInfo = SessionEntity()
             }
 
-            Constants.Actions.PAUSE_LOCATION_SERVICE -> {
-                LOG.d("Pause location service")
-                stopLocationUpdates()
-            }
+            startLocationUpdates()
 
-            Constants.Actions.RESUME_LOCATION_SERVICE -> {
-                LOG.d("Resume location service")
-                startLocationUpdates()
-
-                // Update start time
-                mTimeLastSave = System.currentTimeMillis()
-            }
-
-            Constants.Actions.REQUEST_UPDATE_LOCATION_SERVICE -> {
-                LOG.d("Request update location service")
-                stopLocationUpdates()
-                startLocationUpdates()
-            }
+            isServiceRunning = true
         }
 
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     override fun onDestroy() {
         stopLocationUpdates()
+        isServiceRunning = false
         super.onDestroy()
     }
 
@@ -86,6 +126,9 @@ class LocationForegroundService : Service() {
         // Add point
         mSessionInfo.addPoint(lat, lng, mTimeLastSave, System.currentTimeMillis())
         mTimeLastSave = System.currentTimeMillis()
+
+        // Save temp info
+        SharedPreferencesManager.getInstance().setTempSessionInfo(this, mSessionInfo)
 
         // Send broadcast
         val bundle = Bundle()

@@ -81,7 +81,6 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     }
 
     override fun onDestroy() {
-        stopLocationService()
         mReceiver?.let {
             unregisterReceiver(mReceiver)
         }
@@ -224,6 +223,10 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     }
 
     private fun startLocationService() {
+        if (LocationForegroundService.isServiceRunning) {
+            return
+        }
+
         askCompactPermissions(arrayOf(
             PermissionUtils.Manifest_ACCESS_FINE_LOCATION
         ), object : PermissionResult {
@@ -246,8 +249,9 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     }
 
     private fun stopLocationService() {
-        val serviceIntent = Intent(this, LocationForegroundService::class.java)
-        stopService(serviceIntent)
+        val serviceIntent = Intent(this@RecordActivity, LocationForegroundService::class.java)
+        serviceIntent.action = Constants.Actions.STOP_LOCATION_SERVICE
+        ContextCompat.startForegroundService(this@RecordActivity, serviceIntent)
     }
 
     /**
@@ -285,6 +289,13 @@ class RecordActivity : BaseActivity(), OnMapReadyCallback {
     private fun initView() {
         mMapFragment = supportFragmentManager.findFragmentById(R.id.mMap) as SupportMapFragment
         mMapFragment.getMapAsync(this)
+
+        // State
+        if (LocationForegroundService.isServiceRunning) {
+            showState(1)
+        } else {
+            showState(0)
+        }
     }
 
     private fun initListener() {
